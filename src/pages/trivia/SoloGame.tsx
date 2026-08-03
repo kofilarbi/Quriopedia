@@ -146,6 +146,7 @@ export default function SoloGame() {
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigate('/trivia/solo')}
+            aria-label="Back to Solo Setup"
             className="flex items-center gap-1 text-warmGray hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
           >
             <ArrowLeft size={18} />
@@ -196,12 +197,13 @@ export default function SoloGame() {
             </h2>
 
             {/* Choices */}
-            <div className="space-y-3 mb-6">
+            <div role="group" aria-label="Answer choices" className="space-y-3 mb-6">
               {question.choices.map((choice, i) => (
                 <button
                   key={i}
                   onClick={() => handleAnswer(i)}
                   disabled={showFeedback}
+                  aria-pressed={selectedAnswer === i}
                   className={getChoiceStyle(i)}
                 >
                   <span className="font-semibold text-xs opacity-60 mr-2">

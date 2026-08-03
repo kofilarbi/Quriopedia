@@ -11,7 +11,14 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      injectManifest: {
+        swDest: 'dist/sw.js',
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      },
       includeAssets: ['favicon.ico', 'icon.svg'],
       manifest: {
         name: 'Quriopedia',
@@ -22,13 +29,32 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: '/icon.svg', sizes: '192x192', type: 'image/svg+xml' },
-          { src: '/icon.svg', sizes: '512x512', type: 'image/svg+xml' },
+          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' },
         ],
       },
     }),
   ],
   resolve: {
     alias: { '@': resolve(__dirname, './src') },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('react-dom') || id.includes('react-router-dom') || (id.includes('node_modules/react/') && !id.includes('react-dom'))) {
+            return 'vendor-react'
+          }
+          if (id.includes('@supabase/supabase-js') || id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase'
+          }
+          if (id.includes('framer-motion')) {
+            return 'vendor-motion'
+          }
+          if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
+            return 'vendor-query'
+          }
+        },
+      },
+    },
   },
 })

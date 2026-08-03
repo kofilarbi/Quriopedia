@@ -7,6 +7,7 @@ import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import { saveOnboarding } from '@/lib/profileService'
 import CategoryTile from '@/components/CategoryTile'
+import { requestNotificationPermission, subscribeToPush } from '@/lib/pushNotifications'
 
 const STEP_COUNT = 4
 
@@ -37,7 +38,14 @@ export default function Onboarding() {
     setStreak,
   } = useAppStore()
 
-  const goNext = () => {
+  const goNext = async () => {
+    // When leaving the notifications step (step 2), request push permission
+    if (step === 2 && notificationsEnabled && userId) {
+      const permission = await requestNotificationPermission()
+      if (permission === 'granted') {
+        void subscribeToPush(userId)
+      }
+    }
     setDir(1)
     setStep((s) => s + 1)
   }
@@ -99,12 +107,12 @@ export default function Onboarding() {
           transition={{ type: 'tween', duration: 0.3, ease: 'easeInOut' }}
           className="absolute inset-0 overflow-y-auto"
         >
-          {step === 0 && <WelcomeStep onNext={goNext} />}
+          {step === 0 && <WelcomeStep onNext={() => { void goNext() }} />}
           {step === 1 && (
             <CategoriesStep
               selected={selectedCategories}
               onToggle={toggleCategory}
-              onNext={goNext}
+              onNext={() => { void goNext() }}
             />
           )}
           {step === 2 && (
@@ -113,7 +121,7 @@ export default function Onboarding() {
               time={notificationTime}
               onToggle={setNotificationsEnabled}
               onTimeChange={setNotificationTime}
-              onNext={goNext}
+              onNext={() => { void goNext() }}
             />
           )}
           {step === 3 && (

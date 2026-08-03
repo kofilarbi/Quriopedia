@@ -10,6 +10,7 @@ import { updateProfile, updateUserCategories } from '@/lib/profileService'
 import { getCategoryIcon } from '@/lib/categoryIcons'
 import { fetchMatchHistory } from '@/lib/sessionService'
 import { fetchFriends, addFriend, removeFriend, searchUsers } from '@/lib/friendService'
+import { requestNotificationPermission, subscribeToPush, unsubscribeFromPush } from '@/lib/pushNotifications'
 
 export default function Profile() {
   const {
@@ -87,6 +88,14 @@ export default function Profile() {
     if (userId) {
       try {
         await updateProfile(userId, { notifications_enabled: next })
+        if (next) {
+          const permission = await requestNotificationPermission()
+          if (permission === 'granted') {
+            void subscribeToPush(userId)
+          }
+        } else {
+          void unsubscribeFromPush(userId)
+        }
       } catch (err) {
         console.error('[Profile] toggleNotifications error:', err)
       }
@@ -164,6 +173,7 @@ export default function Profile() {
                 setNameInput(name)
                 setEditingName(true)
               }}
+              aria-label="Edit name"
               className="text-warmGray hover:text-amber transition-colors"
             >
               <Pencil size={16} />
@@ -541,6 +551,8 @@ function ToggleRow({
       </div>
       <button
         onClick={onToggle}
+        aria-label={`${label}: ${enabled ? 'on' : 'off'}`}
+        aria-pressed={enabled}
         className={`relative inline-flex w-12 h-6 rounded-full transition-colors duration-300 ${
           enabled ? 'bg-amber' : 'bg-sand dark:bg-white/20'
         }`}

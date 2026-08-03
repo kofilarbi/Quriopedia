@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, Shuffle, X } from 'lucide-react'
+import { ArrowLeft, Shuffle, X, WifiOff } from 'lucide-react'
 import { useAppStore } from '@/store/useAppStore'
 import {
   joinQueue,
@@ -28,6 +28,26 @@ type MatchmakingPhase = 'select' | 'searching'
 export default function Matchmaking() {
   const navigate = useNavigate()
   const { userId, name } = useAppStore()
+
+  if (!navigator.onLine) {
+    return (
+      <div className="min-h-screen bg-cream dark:bg-navy flex flex-col items-center justify-center px-6 text-center">
+        <WifiOff size={48} className="text-warmGray dark:text-gray-400 mb-4" />
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-50 mb-2">
+          Multiplayer requires an internet connection.
+        </h1>
+        <p className="text-sm text-warmGray dark:text-gray-400 mb-6">
+          You're currently offline. Connect to the internet to find a match.
+        </p>
+        <button
+          onClick={() => navigate('/trivia/solo')}
+          className="px-6 py-3 bg-amber text-white rounded-xl font-semibold hover:bg-amber-dark transition-colors"
+        >
+          Go Solo
+        </button>
+      </div>
+    )
+  }
 
   const [phase, setPhase] = useState<MatchmakingPhase>('select')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)

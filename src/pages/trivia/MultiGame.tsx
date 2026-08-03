@@ -448,12 +448,13 @@ export default function MultiGame() {
               {question.question}
             </h2>
 
-            <div className="space-y-3 mb-6">
+            <div role="group" aria-label="Answer choices" className="space-y-3 mb-6">
               {question.choices.map((choice, i) => (
                 <button
                   key={i}
                   onClick={() => void handleAnswer(i)}
                   disabled={showFeedback}
+                  aria-pressed={selectedAnswer === i}
                   className={getChoiceStyle(i)}
                 >
                   <span className="font-semibold text-xs opacity-60 mr-2">

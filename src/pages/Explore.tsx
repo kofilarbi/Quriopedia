@@ -93,6 +93,7 @@ function CategoryFeed({ categoryId }: { categoryId: string }) {
       {/* Back button */}
       <button
         onClick={() => navigate('/explore')}
+        aria-label="Back to all topics"
         className="flex items-center gap-2 text-warmGray hover:text-gray-700 dark:hover:text-gray-300 transition-colors mb-5"
       >
         <ArrowLeft size={20} />
