@@ -1,10 +1,26 @@
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
-import type { Category, KnowledgeCard as KnowledgeCardType } from '@/data/mockData'
-import { categories, knowledgeCards } from '@/data/mockData'
+import type { Category } from '@/data/mockData'
+import { categories } from '@/data/mockData'
 import CategoryTile from '@/components/CategoryTile'
 import KnowledgeCard from '@/components/KnowledgeCard'
+import type { CardDisplay } from '@/components/KnowledgeCard'
+import { fetchCategoryEntries } from '@/lib/entryService'
+import type { Entry } from '@/lib/entryService'
+
+function entryToCard(entry: Entry): CardDisplay {
+  return {
+    id: entry.id,
+    categoryId: entry.categoryId,
+    headline: entry.headline,
+    body: entry.body,
+    readMore: entry.readMore,
+    type: entry.type,
+    date: entry.publishedDate,
+  }
+}
 
 export default function Explore() {
   const { categoryId } = useParams<{ categoryId?: string }>()
@@ -54,7 +70,13 @@ function CategoryGrid() {
 function CategoryFeed({ categoryId }: { categoryId: string }) {
   const navigate = useNavigate()
   const category = categories.find((c: Category) => c.id === categoryId)
-  const cards = knowledgeCards.filter((c: KnowledgeCardType) => c.categoryId === categoryId)
+
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['categoryEntries', categoryId],
+    queryFn: () => fetchCategoryEntries(categoryId),
+  })
+
+  const cards: CardDisplay[] = entries.map(entryToCard)
 
   if (!category) {
     return (
@@ -89,14 +111,22 @@ function CategoryFeed({ categoryId }: { categoryId: string }) {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{category.name}</h1>
-          <p className="text-sm text-warmGray dark:text-gray-400">{cards.length} cards</p>
+          <p className="text-sm text-warmGray dark:text-gray-400">
+            {isLoading ? 'Loading…' : `${cards.length} cards`}
+          </p>
         </div>
       </motion.div>
 
       {/* Cards */}
-      {cards.length > 0 ? (
+      {isLoading ? (
         <div className="space-y-4">
-          {cards.map((card: KnowledgeCardType, i: number) => (
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-48 bg-sand dark:bg-navy-surface rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : cards.length > 0 ? (
+        <div className="space-y-4">
+          {cards.map((card: CardDisplay, i: number) => (
             <motion.div
               key={card.id}
               initial={{ opacity: 0, y: 16 }}

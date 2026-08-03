@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useAppStore } from '@/store/useAppStore'
-import type { AppState } from '@/store/useAppStore'
+import { useAuth } from '@/lib/useAuth'
 import BottomNav from '@/components/BottomNav'
 import Onboarding from '@/pages/Onboarding'
 import Home from '@/pages/Home'
@@ -9,19 +9,24 @@ import Explore from '@/pages/Explore'
 import Trivia from '@/pages/Trivia'
 import Saved from '@/pages/Saved'
 import Profile from '@/pages/Profile'
+import Auth from '@/pages/Auth'
 
-function RequireOnboarding({ children }: { children: React.ReactNode }) {
-  const hasCompletedOnboarding = useAppStore((s: AppState) => s.hasCompletedOnboarding)
-  if (!hasCompletedOnboarding) {
-    return <Navigate to="/onboarding" replace />
-  }
-  return <>{children}</>
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-cream dark:bg-navy flex items-center justify-center">
+      <div className="w-16 h-16 rounded-2xl bg-amber flex items-center justify-center shadow-lg animate-pulse">
+        <span className="text-white font-bold text-3xl font-serif">Q</span>
+      </div>
+    </div>
+  )
 }
 
 export default function App() {
-  const { darkMode } = useAppStore()
+  const { darkMode, hasCompletedOnboarding } = useAppStore()
+  const { user, loading } = useAuth()
   const location = useLocation()
   const isOnboarding = location.pathname === '/onboarding'
+  const isAuth = location.pathname === '/auth'
 
   useEffect(() => {
     if (darkMode) {
@@ -31,62 +36,110 @@ export default function App() {
     }
   }, [darkMode])
 
+  if (loading) {
+    return <LoadingScreen />
+  }
+
   return (
     <div className="max-w-md mx-auto relative min-h-screen">
       <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
+        {/* Public auth route */}
+        <Route
+          path="/auth"
+          element={user ? <Navigate to="/" replace /> : <Auth />}
+        />
+
+        {/* Onboarding — requires auth but not completed onboarding */}
+        <Route
+          path="/onboarding"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : hasCompletedOnboarding ? (
+              <Navigate to="/" replace />
+            ) : (
+              <Onboarding />
+            )
+          }
+        />
+
+        {/* Protected app routes */}
         <Route
           path="/"
           element={
-            <RequireOnboarding>
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
               <Home />
-            </RequireOnboarding>
+            )
           }
         />
         <Route
           path="/explore"
           element={
-            <RequireOnboarding>
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
               <Explore />
-            </RequireOnboarding>
+            )
           }
         />
         <Route
           path="/explore/:categoryId"
           element={
-            <RequireOnboarding>
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
               <Explore />
-            </RequireOnboarding>
+            )
           }
         />
         <Route
           path="/trivia"
           element={
-            <RequireOnboarding>
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
               <Trivia />
-            </RequireOnboarding>
+            )
           }
         />
         <Route
           path="/saved"
           element={
-            <RequireOnboarding>
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
               <Saved />
-            </RequireOnboarding>
+            )
           }
         />
         <Route
           path="/profile"
           element={
-            <RequireOnboarding>
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
               <Profile />
-            </RequireOnboarding>
+            )
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {!isOnboarding && <BottomNav />}
+      {!isOnboarding && !isAuth && user && hasCompletedOnboarding && <BottomNav />}
     </div>
   )
 }

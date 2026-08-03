@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, Moon, Sun, Bell, BellOff, User } from 'lucide-react'
+import { Pencil, Check, Moon, Sun, Bell, BellOff, User, LogOut } from 'lucide-react'
 import type { Category } from '@/data/mockData'
 import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
+import { supabase } from '@/lib/supabase'
+import { updateProfile, updateUserCategories } from '@/lib/profileService'
 
 export default function Profile() {
   const {
+    userId,
     name,
     setName,
     selectedCategories,
@@ -23,6 +26,7 @@ export default function Profile() {
 
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(name)
+  const [signingOut, setSigningOut] = useState(false)
 
   const initials = name
     .trim()
@@ -32,9 +36,78 @@ export default function Profile() {
     .join('')
     .toUpperCase()
 
-  const saveName = () => {
-    setName(nameInput.trim())
+  const saveName = async () => {
+    const trimmed = nameInput.trim()
+    setName(trimmed)
     setEditingName(false)
+    if (userId) {
+      try {
+        await updateProfile(userId, { name: trimmed })
+      } catch (err) {
+        console.error('[Profile] saveName error:', err)
+      }
+    }
+  }
+
+  const handleToggleCategory = async (id: string) => {
+    if (!canDeselect(id)) return
+    toggleCategory(id)
+    if (userId) {
+      const updated = selectedCategories.includes(id)
+        ? selectedCategories.filter((c) => c !== id)
+        : [...selectedCategories, id]
+      try {
+        await updateUserCategories(userId, updated)
+      } catch (err) {
+        console.error('[Profile] handleToggleCategory error:', err)
+        // Revert
+        toggleCategory(id)
+      }
+    }
+  }
+
+  const handleToggleDarkMode = async () => {
+    toggleDarkMode()
+    if (userId) {
+      try {
+        await updateProfile(userId, { dark_mode: !darkMode })
+      } catch (err) {
+        console.error('[Profile] toggleDarkMode error:', err)
+      }
+    }
+  }
+
+  const handleToggleNotifications = async () => {
+    const next = !notificationsEnabled
+    setNotificationsEnabled(next)
+    if (userId) {
+      try {
+        await updateProfile(userId, { notifications_enabled: next })
+      } catch (err) {
+        console.error('[Profile] toggleNotifications error:', err)
+      }
+    }
+  }
+
+  const handleNotificationTimeChange = async (t: string) => {
+    setNotificationTime(t)
+    if (userId) {
+      try {
+        await updateProfile(userId, { notification_time: t })
+      } catch (err) {
+        console.error('[Profile] notificationTime error:', err)
+      }
+    }
+  }
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('[Profile] signOut error:', err)
+      setSigningOut(false)
+    }
   }
 
   const canDeselect = (id: string) => {
@@ -64,14 +137,14 @@ export default function Profile() {
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') saveName()
+                if (e.key === 'Enter') void saveName()
                 if (e.key === 'Escape') setEditingName(false)
               }}
               className="border-b-2 border-amber bg-transparent text-xl font-semibold text-gray-900 dark:text-gray-50 text-center outline-none w-40"
               autoFocus
             />
             <button
-              onClick={saveName}
+              onClick={() => void saveName()}
               className="w-8 h-8 bg-amber rounded-full flex items-center justify-center"
             >
               <Check size={16} className="text-white" />
@@ -116,7 +189,7 @@ export default function Profile() {
             return (
               <button
                 key={cat.id}
-                onClick={() => !disabled && toggleCategory(cat.id)}
+                onClick={() => { void handleToggleCategory(cat.id) }}
                 disabled={disabled}
                 className={`flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 text-xs font-medium transition-all ${
                   isSelected
@@ -140,7 +213,7 @@ export default function Profile() {
           label="Dark mode"
           description={darkMode ? 'Dark theme active' : 'Light theme active'}
           enabled={darkMode}
-          onToggle={toggleDarkMode}
+          onToggle={() => { void handleToggleDarkMode() }}
         />
 
         <div className="h-px bg-sand dark:bg-white/10 my-1" />
@@ -151,7 +224,7 @@ export default function Profile() {
           label="Daily reminder"
           description={notificationsEnabled ? `Sends at ${notificationTime}` : 'No reminders set'}
           enabled={notificationsEnabled}
-          onToggle={() => setNotificationsEnabled(!notificationsEnabled)}
+          onToggle={() => { void handleToggleNotifications() }}
         />
 
         <AnimatePresence>
@@ -170,7 +243,7 @@ export default function Profile() {
                 <input
                   type="time"
                   value={notificationTime}
-                  onChange={(e) => setNotificationTime(e.target.value)}
+                  onChange={(e) => { void handleNotificationTimeChange(e.target.value) }}
                   className="w-full bg-cream dark:bg-navy border border-sand dark:border-white/20 rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 font-medium focus:outline-none focus:ring-2 focus:ring-amber"
                 />
               </div>
@@ -184,15 +257,27 @@ export default function Profile() {
         <div className="flex items-center justify-between py-2">
           <span className="text-sm text-warmGray dark:text-gray-400">Version</span>
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            1.0.0 · Phase 1
+            2.0.0 · Phase 2
           </span>
         </div>
         <div className="flex items-center justify-between py-2">
           <span className="text-sm text-warmGray dark:text-gray-400">Built with</span>
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            React + Vite + Tailwind
+            React + Supabase
           </span>
         </div>
+      </Section>
+
+      {/* Sign out */}
+      <Section title="Account">
+        <button
+          onClick={() => { void handleSignOut() }}
+          disabled={signingOut}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-60"
+        >
+          <LogOut size={16} />
+          {signingOut ? 'Signing out…' : 'Sign out'}
+        </button>
       </Section>
     </div>
   )

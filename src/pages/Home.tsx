@@ -1,26 +1,34 @@
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Flame } from 'lucide-react'
-import type { KnowledgeCard as KnowledgeCardType, Category } from '@/data/mockData'
-import { knowledgeCards, categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import KnowledgeCard from '@/components/KnowledgeCard'
+import type { CardDisplay } from '@/components/KnowledgeCard'
+import { fetchTodaysEntries } from '@/lib/entryService'
+import type { Entry } from '@/lib/entryService'
 
-async function fetchTodaysCards(selectedCategories: string[], today: string) {
-  await new Promise((r) => setTimeout(r, 300))
-  return knowledgeCards.filter(
-    (c: KnowledgeCardType) => selectedCategories.includes(c.categoryId) && c.date === today
-  )
+function entryToCard(entry: Entry): CardDisplay {
+  return {
+    id: entry.id,
+    categoryId: entry.categoryId,
+    headline: entry.headline,
+    body: entry.body,
+    readMore: entry.readMore,
+    type: entry.type,
+    date: entry.publishedDate,
+  }
 }
 
 export default function Home() {
   const { name, selectedCategories, streak } = useAppStore()
-  const today = new Date().toISOString().split('T')[0]
 
-  const { data: cards = [], isLoading } = useQuery({
-    queryKey: ['todayCards', selectedCategories, today],
-    queryFn: () => fetchTodaysCards(selectedCategories, today),
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['todayEntries', selectedCategories],
+    queryFn: () => fetchTodaysEntries(selectedCategories),
+    enabled: selectedCategories.length > 0,
   })
+
+  const cards: CardDisplay[] = entries.map(entryToCard)
 
   const greeting = () => {
     const hour = new Date().getHours()
@@ -64,7 +72,7 @@ export default function Home() {
         <div>
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 bg-amber text-white text-xs font-semibold px-2.5 py-1 rounded-full">
-              ✨ New today
+              New today
             </span>
           </div>
           <p className="text-sm text-warmGray dark:text-gray-400 mt-1">{formattedDate}</p>
@@ -83,7 +91,7 @@ export default function Home() {
         </div>
       ) : cards.length > 0 ? (
         <div className="space-y-4">
-          {cards.map((card: KnowledgeCardType, i: number) => (
+          {cards.map((card: CardDisplay, i: number) => (
             <motion.div
               key={card.id}
               initial={{ opacity: 0, y: 20 }}
@@ -102,34 +110,6 @@ export default function Home() {
 }
 
 function EmptyState({ selectedCount }: { selectedCount: number }) {
-  // Fallback: show some cards from the mock data when none match today's date
-  const fallbackCards = knowledgeCards
-    .filter((c: KnowledgeCardType) => {
-      const cat = categories.find((cat: Category) => cat.id === c.categoryId)
-      return cat !== undefined && selectedCount > 0
-    })
-    .slice(0, 3)
-
-  if (fallbackCards.length > 0 && selectedCount > 0) {
-    return (
-      <div className="space-y-4">
-        <p className="text-sm text-warmGray dark:text-gray-400 italic mb-2">
-          Showing recent picks for your topics
-        </p>
-        {fallbackCards.map((card: KnowledgeCardType, i: number) => (
-          <motion.div
-            key={card.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
-          >
-            <KnowledgeCard card={card} showBookmark />
-          </motion.div>
-        ))}
-      </div>
-    )
-  }
-
   return (
     <div className="text-center py-16">
       <p className="text-4xl mb-4">📚</p>

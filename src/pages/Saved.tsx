@@ -1,25 +1,46 @@
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Bookmark } from 'lucide-react'
-import type { KnowledgeCard as KnowledgeCardType, Category } from '@/data/mockData'
-import { knowledgeCards, categories } from '@/data/mockData'
+import type { Category } from '@/data/mockData'
+import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import KnowledgeCard from '@/components/KnowledgeCard'
+import type { CardDisplay } from '@/components/KnowledgeCard'
+import { fetchEntriesByIds } from '@/lib/entryService'
+import type { Entry } from '@/lib/entryService'
+
+function entryToCard(entry: Entry): CardDisplay {
+  return {
+    id: entry.id,
+    categoryId: entry.categoryId,
+    headline: entry.headline,
+    body: entry.body,
+    readMore: entry.readMore,
+    type: entry.type,
+    date: entry.publishedDate,
+  }
+}
 
 export default function Saved() {
   const { bookmarks } = useAppStore()
   const [activeCategory, setActiveCategory] = useState<string>('all')
 
-  const savedCards = knowledgeCards.filter((c: KnowledgeCardType) => bookmarks.includes(c.id))
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['savedEntries', bookmarks],
+    queryFn: () => fetchEntriesByIds(bookmarks),
+    enabled: bookmarks.length > 0,
+  })
 
-  // Find categories that have saved cards
-  const savedCategoryIds = [...new Set(savedCards.map((c: KnowledgeCardType) => c.categoryId))]
+  const savedCards: CardDisplay[] = entries.map(entryToCard)
+
+  const savedCategoryIds = [...new Set(savedCards.map((c: CardDisplay) => c.categoryId))]
   const savedCategories = categories.filter((c: Category) => savedCategoryIds.includes(c.id))
 
   const filtered =
     activeCategory === 'all'
       ? savedCards
-      : savedCards.filter((c: KnowledgeCardType) => c.categoryId === activeCategory)
+      : savedCards.filter((c: CardDisplay) => c.categoryId === activeCategory)
 
   return (
     <div className="px-4 pt-6 pb-28">
@@ -31,12 +52,18 @@ export default function Saved() {
         Bookmarks
       </motion.h1>
 
-      {savedCards.length === 0 ? (
+      {isLoading ? (
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <div key={i} className="h-48 bg-sand dark:bg-navy-surface rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      ) : savedCards.length === 0 ? (
         <EmptyBookmarks />
       ) : (
         <>
           {/* Category filter pills */}
-          {savedCategories.length > 0 && (
+          {savedCategories.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2 mb-5 scrollbar-hide">
               <button
                 onClick={() => setActiveCategory('all')}
@@ -49,7 +76,7 @@ export default function Saved() {
                 All ({savedCards.length})
               </button>
               {savedCategories.map((cat: Category) => {
-                const count = savedCards.filter((c: KnowledgeCardType) => c.categoryId === cat.id).length
+                const count = savedCards.filter((c: CardDisplay) => c.categoryId === cat.id).length
                 return (
                   <button
                     key={cat.id}
@@ -71,7 +98,7 @@ export default function Saved() {
 
           {/* Cards */}
           <div className="space-y-4">
-            {filtered.map((card: KnowledgeCardType, i: number) => (
+            {filtered.map((card: CardDisplay, i: number) => (
               <motion.div
                 key={card.id}
                 initial={{ opacity: 0, y: 16 }}

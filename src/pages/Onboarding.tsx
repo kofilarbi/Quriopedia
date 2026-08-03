@@ -5,6 +5,7 @@ import { ArrowRight, Bell, BellOff, Check } from 'lucide-react'
 import type { Category } from '@/data/mockData'
 import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
+import { saveOnboarding } from '@/lib/profileService'
 import CategoryTile from '@/components/CategoryTile'
 
 const STEP_COUNT = 4
@@ -19,7 +20,11 @@ export default function Onboarding() {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [dir, setDir] = useState(1)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
   const {
+    userId,
     selectedCategories,
     toggleCategory,
     notificationsEnabled,
@@ -28,7 +33,8 @@ export default function Onboarding() {
     setNotificationTime,
     name,
     setName,
-    completeOnboarding,
+    setHasCompletedOnboarding,
+    setStreak,
   } = useAppStore()
 
   const goNext = () => {
@@ -36,9 +42,30 @@ export default function Onboarding() {
     setStep((s) => s + 1)
   }
 
-  const finish = () => {
-    completeOnboarding()
-    navigate('/')
+  const finish = async () => {
+    if (!userId) {
+      // Fallback for unauthenticated state — shouldn't normally be reached
+      setHasCompletedOnboarding(true)
+      setStreak(1)
+      navigate('/')
+      return
+    }
+
+    setSaving(true)
+    setSaveError(null)
+    try {
+      await saveOnboarding(userId, {
+        name,
+        selectedCategories,
+        notificationsEnabled,
+        notificationTime,
+      })
+      navigate('/')
+    } catch (err) {
+      console.error('[Onboarding] finish error:', err)
+      setSaveError('Could not save your preferences. Please try again.')
+      setSaving(false)
+    }
   }
 
   return (
@@ -93,7 +120,9 @@ export default function Onboarding() {
             <PersonalizationStep
               name={name}
               onNameChange={setName}
-              onFinish={finish}
+              onFinish={() => { void finish() }}
+              saving={saving}
+              saveError={saveError}
             />
           )}
         </motion.div>
@@ -142,15 +171,6 @@ function WelcomeStep({ onNext }: { onNext: () => void }) {
         Get started
         <ArrowRight size={20} />
       </motion.button>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6 }}
-        className="mt-6 text-xs text-warmGray dark:text-gray-500"
-      >
-        No account required · Free forever
-      </motion.p>
     </div>
   )
 }
@@ -189,7 +209,8 @@ function CategoriesStep({
       </div>
 
       {/* Sticky footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-cream/95 dark:bg-navy/95 backdrop-blur-sm border-t border-sand dark:border-white/10 px-6 py-4"
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-cream/95 dark:bg-navy/95 backdrop-blur-sm border-t border-sand dark:border-white/10 px-6 py-4"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
       >
         <div className="max-w-md mx-auto flex items-center justify-between">
@@ -316,10 +337,14 @@ function PersonalizationStep({
   name,
   onNameChange,
   onFinish,
+  saving,
+  saveError,
 }: {
   name: string
   onNameChange: (n: string) => void
   onFinish: () => void
+  saving: boolean
+  saveError: string | null
 }) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-8 pt-16">
@@ -343,17 +368,23 @@ function PersonalizationStep({
         autoFocus
       />
 
+      {saveError && (
+        <p className="text-sm text-red-600 dark:text-red-400 mb-4 text-center">{saveError}</p>
+      )}
+
       <button
         onClick={onFinish}
-        className="w-full max-w-sm bg-amber hover:bg-amber-dark text-white font-semibold py-4 rounded-full transition-colors shadow-md flex items-center justify-center gap-2"
+        disabled={saving}
+        className="w-full max-w-sm bg-amber hover:bg-amber-dark text-white font-semibold py-4 rounded-full transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-60"
       >
-        Start learning
-        <ArrowRight size={18} />
+        {saving ? 'Saving…' : 'Start learning'}
+        {!saving && <ArrowRight size={18} />}
       </button>
 
       <button
         onClick={onFinish}
-        className="mt-3 text-sm text-warmGray hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+        disabled={saving}
+        className="mt-3 text-sm text-warmGray hover:text-gray-600 dark:hover:text-gray-300 transition-colors disabled:opacity-40"
       >
         Skip
       </button>
