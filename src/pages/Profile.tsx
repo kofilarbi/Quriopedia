@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, Moon, Sun, Bell, BellOff, User, LogOut, Flame, Bookmark, Layers, type LucideIcon } from 'lucide-react'
+import { Pencil, Check, Moon, Sun, Bell, BellOff, User, LogOut, Flame, Bookmark, Layers, Trophy, UserPlus, UserMinus, Search, Medal, type LucideIcon } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Category } from '@/data/mockData'
 import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import { supabase } from '@/lib/supabase'
 import { updateProfile, updateUserCategories } from '@/lib/profileService'
 import { getCategoryIcon } from '@/lib/categoryIcons'
+import { fetchMatchHistory } from '@/lib/sessionService'
+import { fetchFriends, addFriend, removeFriend, searchUsers } from '@/lib/friendService'
 
 export default function Profile() {
   const {
@@ -270,6 +273,12 @@ export default function Profile() {
         </div>
       </Section>
 
+      {/* Match History */}
+      {userId && <MatchHistorySection userId={userId} />}
+
+      {/* Friends */}
+      {userId && <FriendsSection userId={userId} />}
+
       {/* Sign out */}
       <Section title="Account">
         <button
@@ -282,6 +291,204 @@ export default function Profile() {
         </button>
       </Section>
     </div>
+  )
+}
+
+function MatchHistorySection({ userId }: { userId: string }) {
+  const { data: history, isLoading, error } = useQuery({
+    queryKey: ['matchHistory', userId],
+    queryFn: () => fetchMatchHistory(userId),
+  })
+
+  function formatDate(dateStr: string) {
+    return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+  }
+
+  return (
+    <Section title="Match History">
+      {isLoading && (
+        <div className="space-y-2">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-12 rounded-xl bg-sand dark:bg-white/10 animate-pulse" />
+          ))}
+        </div>
+      )}
+      {error && (
+        <p className="text-sm text-red-500 dark:text-red-400">Failed to load match history.</p>
+      )}
+      {!isLoading && !error && (!history || history.length === 0) && (
+        <p className="text-sm text-warmGray dark:text-gray-400">
+          No matches yet — play with friends to see results here.
+        </p>
+      )}
+      {!isLoading && history && history.length > 0 && (
+        <div className="space-y-2">
+          {history.slice(0, 5).map((match) => {
+            const CatIcon = match.categoryId ? getCategoryIcon(match.categoryId) : Trophy
+            return (
+              <div key={match.id} className="flex items-center gap-3 py-1">
+                <CatIcon size={16} className="text-amber flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                    #{match.finalRank} of {match.opponentCount + 1}
+                  </p>
+                  <p className="text-xs text-warmGray dark:text-gray-400">
+                    {match.questionsCorrect}/{match.questionsTotal} correct
+                  </p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <div className="flex items-center gap-1">
+                    <Medal size={12} className="text-amber" />
+                    <span className="text-sm font-bold text-amber">{match.finalScore}</span>
+                  </div>
+                  <p className="text-xs text-warmGray dark:text-gray-400">
+                    {formatDate(match.createdAt)}
+                  </p>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Section>
+  )
+}
+
+function FriendsSection({ userId }: { userId: string }) {
+  const queryClient = useQueryClient()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string }>>([])
+  const [searching, setSearching] = useState(false)
+
+  const { data: friends, isLoading } = useQuery({
+    queryKey: ['friends', userId],
+    queryFn: () => fetchFriends(userId),
+  })
+
+  const addMutation = useMutation({
+    mutationFn: (friendId: string) => addFriend(userId, friendId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['friends', userId] })
+      setSearchResults([])
+      setSearchQuery('')
+    },
+  })
+
+  const removeMutation = useMutation({
+    mutationFn: (friendId: string) => removeFriend(userId, friendId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['friends', userId] })
+    },
+  })
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+    setSearching(true)
+    try {
+      const results = await searchUsers(searchQuery, userId)
+      setSearchResults(results)
+    } catch (err) {
+      console.error('[FriendsSection] searchUsers error:', err)
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const friendIds = friends?.map((f) => f.id) ?? []
+
+  return (
+    <Section title="Friends">
+      {/* Add friend row */}
+      <div className="flex gap-2 mb-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void handleSearch() }}
+          placeholder="Search by name…"
+          className="flex-1 bg-cream dark:bg-navy border border-sand dark:border-white/20 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 placeholder-warmGray dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber"
+        />
+        <button
+          onClick={() => void handleSearch()}
+          disabled={searching}
+          className="px-3 py-2.5 bg-amber text-white rounded-xl hover:bg-amber-dark transition-colors disabled:opacity-60"
+          aria-label="Search"
+        >
+          <Search size={16} />
+        </button>
+      </div>
+
+      {/* Search results */}
+      <AnimatePresence>
+        {searchResults.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="mb-4 bg-cream dark:bg-navy rounded-xl border border-sand dark:border-white/10 overflow-hidden"
+          >
+            {searchResults.map((user) => {
+              const alreadyFriend = friendIds.includes(user.id)
+              return (
+                <div key={user.id} className="flex items-center justify-between px-3 py-2.5 border-b border-sand dark:border-white/5 last:border-0">
+                  <span className="text-sm text-gray-800 dark:text-gray-200">{user.name}</span>
+                  {alreadyFriend ? (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Already friends</span>
+                  ) : (
+                    <button
+                      onClick={() => addMutation.mutate(user.id)}
+                      disabled={addMutation.isPending}
+                      className="flex items-center gap-1 text-xs font-semibold text-amber hover:text-amber-dark transition-colors disabled:opacity-60"
+                    >
+                      <UserPlus size={14} />
+                      Add
+                    </button>
+                  )}
+                </div>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Friends list */}
+      {isLoading && (
+        <div className="space-y-2">
+          {[0, 1].map((i) => (
+            <div key={i} className="h-10 rounded-xl bg-sand dark:bg-white/10 animate-pulse" />
+          ))}
+        </div>
+      )}
+      {!isLoading && (!friends || friends.length === 0) && (
+        <p className="text-sm text-warmGray dark:text-gray-400">
+          No friends yet. Search by name to add someone.
+        </p>
+      )}
+      {!isLoading && friends && friends.length > 0 && (
+        <div className="space-y-1">
+          {friends.map((friend) => (
+            <div key={friend.id} className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-amber/20 flex items-center justify-center">
+                  <span className="text-xs font-bold text-amber">
+                    {friend.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-sm text-gray-800 dark:text-gray-200">{friend.name}</span>
+              </div>
+              <button
+                onClick={() => removeMutation.mutate(friend.id)}
+                disabled={removeMutation.isPending}
+                className="text-red-400 hover:text-red-600 transition-colors disabled:opacity-40"
+                aria-label="Remove friend"
+              >
+                <UserMinus size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Section>
   )
 }
 

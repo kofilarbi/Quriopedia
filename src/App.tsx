@@ -13,6 +13,12 @@ import Auth from '@/pages/Auth'
 import SoloSetup from '@/pages/trivia/SoloSetup'
 import SoloGame from '@/pages/trivia/SoloGame'
 import SoloResults from '@/pages/trivia/SoloResults'
+import MultiHub from '@/pages/trivia/MultiHub'
+import WaitingRoom from '@/pages/trivia/WaitingRoom'
+import MultiGame from '@/pages/trivia/MultiGame'
+import MultiResults from '@/pages/trivia/MultiResults'
+import Matchmaking from '@/pages/trivia/Matchmaking'
+import JoinRoom from '@/pages/JoinRoom'
 
 function LoadingScreen() {
   return (
@@ -148,6 +154,77 @@ export default function App() {
               <Navigate to="/onboarding" replace />
             ) : (
               <SoloResults />
+            )
+          }
+        />
+        <Route
+          path="/trivia/multi"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <MultiHub />
+            )
+          }
+        />
+        <Route
+          path="/trivia/multi/room/:sessionId"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <WaitingRoom />
+            )
+          }
+        />
+        <Route
+          path="/trivia/multi/game/:sessionId"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <MultiGame />
+            )
+          }
+        />
+        <Route
+          path="/trivia/multi/results/:sessionId"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <MultiResults />
+            )
+          }
+        />
+        <Route
+          path="/trivia/multi/matchmaking"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <Matchmaking />
+            )
+          }
+        />
+        {/* Join room — requires auth but NOT hasCompletedOnboarding */}
+        <Route
+          path="/join/:roomCode"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : (
+              <JoinRoom />
             )
           }
         />
