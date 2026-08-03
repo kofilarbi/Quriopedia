@@ -1,4 +1,5 @@
 import type { Category } from '@/data/mockData'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 interface Props {
   category: Category
@@ -8,6 +9,8 @@ interface Props {
 }
 
 export default function CategoryTile({ category, selected = false, onClick, size = 'md' }: Props) {
+  const Icon = getCategoryIcon(category.id)
+
   return (
     <button
       onClick={onClick}
@@ -22,9 +25,7 @@ export default function CategoryTile({ category, selected = false, onClick, size
       }`}
       style={selected ? { borderColor: '#E8A838', backgroundColor: '#E8A83812' } : {}}
     >
-      <span className={size === 'sm' ? 'text-xl' : 'text-2xl'} role="img" aria-label={category.name}>
-        {category.emoji}
-      </span>
+      <Icon size={size === 'sm' ? 18 : 22} style={{ color: category.color }} />
       <span className={`text-gray-800 dark:text-gray-200 font-medium leading-tight text-center ${size === 'sm' ? 'text-xs' : 'text-sm'}`}>
         {category.name}
       </span>

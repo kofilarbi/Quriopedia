@@ -9,6 +9,7 @@ import KnowledgeCard from '@/components/KnowledgeCard'
 import type { CardDisplay } from '@/components/KnowledgeCard'
 import { fetchEntriesByIds } from '@/lib/entryService'
 import type { Entry } from '@/lib/entryService'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 function entryToCard(entry: Entry): CardDisplay {
   return {
@@ -77,6 +78,7 @@ export default function Saved() {
               </button>
               {savedCategories.map((cat: Category) => {
                 const count = savedCards.filter((c: CardDisplay) => c.categoryId === cat.id).length
+                const CatIcon = getCategoryIcon(cat.id)
                 return (
                   <button
                     key={cat.id}
@@ -87,7 +89,7 @@ export default function Saved() {
                         : 'bg-white dark:bg-navy-surface border-sand dark:border-white/10 text-warmGray dark:text-gray-400 hover:border-amber/40'
                     }`}
                   >
-                    <span>{cat.emoji}</span>
+                    <CatIcon size={12} />
                     <span>{cat.name}</span>
                     <span className="opacity-60">({count})</span>
                   </button>

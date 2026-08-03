@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pencil, Check, Moon, Sun, Bell, BellOff, User, LogOut } from 'lucide-react'
+import { Pencil, Check, Moon, Sun, Bell, BellOff, User, LogOut, Flame, Bookmark, Layers, type LucideIcon } from 'lucide-react'
 import type { Category } from '@/data/mockData'
 import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import { supabase } from '@/lib/supabase'
 import { updateProfile, updateUserCategories } from '@/lib/profileService'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 export default function Profile() {
   const {
@@ -169,11 +170,11 @@ export default function Profile() {
 
         {/* Stats row */}
         <div className="flex items-center gap-6 mt-4">
-          <Stat label="Day streak" value={streak} emoji="🔥" />
+          <Stat label="Day streak" value={streak} lucideIcon={Flame} />
           <div className="w-px h-8 bg-sand dark:bg-white/10" />
-          <Stat label="Bookmarks" value={bookmarks.length} emoji="📌" />
+          <Stat label="Bookmarks" value={bookmarks.length} lucideIcon={Bookmark} />
           <div className="w-px h-8 bg-sand dark:bg-white/10" />
-          <Stat label="Topics" value={selectedCategories.length} emoji="🎯" />
+          <Stat label="Topics" value={selectedCategories.length} lucideIcon={Layers} />
         </div>
       </motion.div>
 
@@ -186,6 +187,7 @@ export default function Profile() {
           {categories.map((cat: Category) => {
             const isSelected = selectedCategories.includes(cat.id)
             const disabled = isSelected && !canDeselect(cat.id)
+            const CatIcon = getCategoryIcon(cat.id)
             return (
               <button
                 key={cat.id}
@@ -197,7 +199,7 @@ export default function Profile() {
                     : 'border-sand dark:border-white/10 bg-white dark:bg-navy-surface text-warmGray dark:text-gray-400 hover:border-amber/40'
                 } ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
               >
-                <span className="text-xl">{cat.emoji}</span>
+                <CatIcon size={14} style={{ color: cat.color }} />
                 <span className="leading-tight text-center">{cat.name}</span>
               </button>
             )
@@ -283,11 +285,12 @@ export default function Profile() {
   )
 }
 
-function Stat({ label, value, emoji }: { label: string; value: number; emoji: string }) {
+function Stat({ label, value, lucideIcon: Icon }: { label: string; value: number; lucideIcon: LucideIcon }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className="text-lg font-bold text-gray-900 dark:text-gray-50">
-        {emoji} {value}
+      <span className="flex items-center gap-1 text-lg font-bold text-gray-900 dark:text-gray-50">
+        <Icon size={16} className="text-amber" />
+        {value}
       </span>
       <span className="text-xs text-warmGray dark:text-gray-400">{label}</span>
     </div>

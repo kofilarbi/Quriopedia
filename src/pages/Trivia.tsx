@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trophy, Users, User } from 'lucide-react'
+import { Trophy, Users, User, Rocket } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 export default function Trivia() {
   const [hoveredBtn, setHoveredBtn] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 pb-28 text-center">
@@ -44,19 +46,12 @@ export default function Trivia() {
         {/* Solo Play */}
         <div className="relative flex-1">
           <button
-            onMouseEnter={() => setHoveredBtn('solo')}
-            onMouseLeave={() => setHoveredBtn(null)}
-            onFocus={() => setHoveredBtn('solo')}
-            onBlur={() => setHoveredBtn(null)}
-            className="w-full flex flex-col items-center gap-2 bg-white dark:bg-navy-surface border-2 border-sand dark:border-white/10 rounded-2xl py-5 px-4 opacity-50 cursor-not-allowed transition-all"
-            disabled
+            onClick={() => navigate('/trivia/solo')}
+            className="w-full flex flex-col items-center gap-2 bg-white dark:bg-navy-surface border-2 border-amber/40 rounded-2xl py-5 px-4 hover:border-amber hover:bg-amber/5 transition-all"
           >
-            <User size={24} className="text-warmGray" />
+            <User size={24} className="text-amber" />
             <span className="font-semibold text-gray-700 dark:text-gray-300">Solo Play</span>
           </button>
-          <AnimatePresence>
-            {hoveredBtn === 'solo' && <ComingSoonTooltip />}
-          </AnimatePresence>
         </div>
 
         {/* Play with Friends */}
@@ -84,9 +79,9 @@ export default function Trivia() {
         transition={{ delay: 0.35 }}
         className="mt-8 inline-flex items-center gap-2 bg-sand dark:bg-navy-surface border border-sand dark:border-white/10 rounded-full px-4 py-2"
       >
-        <span className="text-xs">🚀</span>
+        <Rocket size={12} className="text-amber" />
         <p className="text-xs text-warmGray dark:text-gray-400 font-medium">
-          Multiplayer trivia launching soon
+          Multiplayer coming soon
         </p>
       </motion.div>
     </div>

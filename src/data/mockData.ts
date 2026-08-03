@@ -1,7 +1,6 @@
 export interface Category {
   id: string
   name: string
-  emoji: string
   color: string
   bgClass: string
 }
@@ -25,22 +24,22 @@ export interface UserConfig {
 }
 
 export const categories: Category[] = [
-  { id: 'music', name: 'Music', emoji: '🎵', color: '#E8A838', bgClass: 'bg-amber/10 border-amber' },
-  { id: 'news', name: 'News', emoji: '📰', color: '#C4614A', bgClass: 'bg-terracotta/10 border-terracotta' },
-  { id: 'history', name: 'History', emoji: '🏛️', color: '#78716C', bgClass: 'bg-stone-500/10 border-stone-500' },
-  { id: 'sports', name: 'Sports', emoji: '⚽', color: '#16A34A', bgClass: 'bg-green-600/10 border-green-600' },
-  { id: 'finance', name: 'Finance', emoji: '📈', color: '#0D9488', bgClass: 'bg-teal-600/10 border-teal-600' },
-  { id: 'science', name: 'Science', emoji: '🔬', color: '#2563EB', bgClass: 'bg-blue-600/10 border-blue-600' },
-  { id: 'technology', name: 'Technology', emoji: '💻', color: '#4F46E5', bgClass: 'bg-indigo-600/10 border-indigo-600' },
-  { id: 'art', name: 'Art', emoji: '🎨', color: '#DB2777', bgClass: 'bg-pink-600/10 border-pink-600' },
-  { id: 'psychology', name: 'Psychology', emoji: '🧠', color: '#7C3AED', bgClass: 'bg-purple-600/10 border-purple-600' },
-  { id: 'space', name: 'Space', emoji: '🚀', color: '#475569', bgClass: 'bg-slate-600/10 border-slate-600' },
-  { id: 'language', name: 'Language', emoji: '📖', color: '#EA580C', bgClass: 'bg-orange-600/10 border-orange-600' },
-  { id: 'nature', name: 'Nature', emoji: '🌿', color: '#059669', bgClass: 'bg-emerald-600/10 border-emerald-600' },
-  { id: 'food', name: 'Food', emoji: '🍽️', color: '#DC2626', bgClass: 'bg-red-600/10 border-red-600' },
-  { id: 'philosophy', name: 'Philosophy', emoji: '💭', color: '#7C3AED', bgClass: 'bg-violet-600/10 border-violet-600' },
-  { id: 'culture', name: 'Culture', emoji: '🌍', color: '#0891B2', bgClass: 'bg-cyan-600/10 border-cyan-600' },
-  { id: 'geography', name: 'Geography', emoji: '🗺️', color: '#0284C7', bgClass: 'bg-sky-600/10 border-sky-600' },
+  { id: 'music', name: 'Music', color: '#E8A838', bgClass: 'bg-amber/10 border-amber' },
+  { id: 'news', name: 'News', color: '#C4614A', bgClass: 'bg-terracotta/10 border-terracotta' },
+  { id: 'history', name: 'History', color: '#78716C', bgClass: 'bg-stone-500/10 border-stone-500' },
+  { id: 'sports', name: 'Sports', color: '#16A34A', bgClass: 'bg-green-600/10 border-green-600' },
+  { id: 'finance', name: 'Finance', color: '#0D9488', bgClass: 'bg-teal-600/10 border-teal-600' },
+  { id: 'science', name: 'Science', color: '#2563EB', bgClass: 'bg-blue-600/10 border-blue-600' },
+  { id: 'technology', name: 'Technology', color: '#4F46E5', bgClass: 'bg-indigo-600/10 border-indigo-600' },
+  { id: 'art', name: 'Art', color: '#DB2777', bgClass: 'bg-pink-600/10 border-pink-600' },
+  { id: 'psychology', name: 'Psychology', color: '#7C3AED', bgClass: 'bg-purple-600/10 border-purple-600' },
+  { id: 'space', name: 'Space', color: '#475569', bgClass: 'bg-slate-600/10 border-slate-600' },
+  { id: 'language', name: 'Language', color: '#EA580C', bgClass: 'bg-orange-600/10 border-orange-600' },
+  { id: 'nature', name: 'Nature', color: '#059669', bgClass: 'bg-emerald-600/10 border-emerald-600' },
+  { id: 'food', name: 'Food', color: '#DC2626', bgClass: 'bg-red-600/10 border-red-600' },
+  { id: 'philosophy', name: 'Philosophy', color: '#7C3AED', bgClass: 'bg-violet-600/10 border-violet-600' },
+  { id: 'culture', name: 'Culture', color: '#0891B2', bgClass: 'bg-cyan-600/10 border-cyan-600' },
+  { id: 'geography', name: 'Geography', color: '#0284C7', bgClass: 'bg-sky-600/10 border-sky-600' },
 ]
 
 export const knowledgeCards: KnowledgeCard[] = [

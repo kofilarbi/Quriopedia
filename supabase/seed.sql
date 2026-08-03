@@ -1,23 +1,23 @@
 -- ============================================================
 -- Seed: Categories (16)
 -- ============================================================
-INSERT INTO categories (id, name, emoji, color, bg_class, sort_order) VALUES
-  ('music',      'Music',      '🎵', '#E8A838', 'bg-amber/10 border-amber',                 1),
-  ('news',       'News',       '📰', '#C4614A', 'bg-terracotta/10 border-terracotta',        2),
-  ('history',    'History',    '🏛️', '#78716C', 'bg-stone-500/10 border-stone-500',          3),
-  ('sports',     'Sports',     '⚽', '#16A34A', 'bg-green-600/10 border-green-600',          4),
-  ('finance',    'Finance',    '📈', '#0D9488', 'bg-teal-600/10 border-teal-600',            5),
-  ('science',    'Science',    '🔬', '#2563EB', 'bg-blue-600/10 border-blue-600',            6),
-  ('technology', 'Technology', '💻', '#4F46E5', 'bg-indigo-600/10 border-indigo-600',        7),
-  ('art',        'Art',        '🎨', '#DB2777', 'bg-pink-600/10 border-pink-600',            8),
-  ('psychology', 'Psychology', '🧠', '#7C3AED', 'bg-purple-600/10 border-purple-600',        9),
-  ('space',      'Space',      '🚀', '#475569', 'bg-slate-600/10 border-slate-600',          10),
-  ('language',   'Language',   '📖', '#EA580C', 'bg-orange-600/10 border-orange-600',        11),
-  ('nature',     'Nature',     '🌿', '#059669', 'bg-emerald-600/10 border-emerald-600',      12),
-  ('food',       'Food',       '🍽️', '#DC2626', 'bg-red-600/10 border-red-600',              13),
-  ('philosophy', 'Philosophy', '💭', '#7C3AED', 'bg-violet-600/10 border-violet-600',        14),
-  ('culture',    'Culture',    '🌍', '#0891B2', 'bg-cyan-600/10 border-cyan-600',            15),
-  ('geography',  'Geography',  '🗺️', '#0284C7', 'bg-sky-600/10 border-sky-600',             16)
+INSERT INTO categories (id, name, color, bg_class, sort_order) VALUES
+  ('music',      'Music',      '#E8A838', 'bg-amber/10 border-amber',                 1),
+  ('news',       'News',       '#C4614A', 'bg-terracotta/10 border-terracotta',        2),
+  ('history',    'History',    '#78716C', 'bg-stone-500/10 border-stone-500',          3),
+  ('sports',     'Sports',     '#16A34A', 'bg-green-600/10 border-green-600',          4),
+  ('finance',    'Finance',    '#0D9488', 'bg-teal-600/10 border-teal-600',            5),
+  ('science',    'Science',    '#2563EB', 'bg-blue-600/10 border-blue-600',            6),
+  ('technology', 'Technology', '#4F46E5', 'bg-indigo-600/10 border-indigo-600',        7),
+  ('art',        'Art',        '#DB2777', 'bg-pink-600/10 border-pink-600',            8),
+  ('psychology', 'Psychology', '#7C3AED', 'bg-purple-600/10 border-purple-600',        9),
+  ('space',      'Space',      '#475569', 'bg-slate-600/10 border-slate-600',          10),
+  ('language',   'Language',   '#EA580C', 'bg-orange-600/10 border-orange-600',        11),
+  ('nature',     'Nature',     '#059669', 'bg-emerald-600/10 border-emerald-600',      12),
+  ('food',       'Food',       '#DC2626', 'bg-red-600/10 border-red-600',              13),
+  ('philosophy', 'Philosophy', '#7C3AED', 'bg-violet-600/10 border-violet-600',        14),
+  ('culture',    'Culture',    '#0891B2', 'bg-cyan-600/10 border-cyan-600',            15),
+  ('geography',  'Geography',  '#0284C7', 'bg-sky-600/10 border-sky-600',             16)
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================

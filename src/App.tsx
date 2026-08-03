@@ -10,6 +10,9 @@ import Trivia from '@/pages/Trivia'
 import Saved from '@/pages/Saved'
 import Profile from '@/pages/Profile'
 import Auth from '@/pages/Auth'
+import SoloSetup from '@/pages/trivia/SoloSetup'
+import SoloGame from '@/pages/trivia/SoloGame'
+import SoloResults from '@/pages/trivia/SoloResults'
 
 function LoadingScreen() {
   return (
@@ -109,6 +112,42 @@ export default function App() {
               <Navigate to="/onboarding" replace />
             ) : (
               <Trivia />
+            )
+          }
+        />
+        <Route
+          path="/trivia/solo"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <SoloSetup />
+            )
+          }
+        />
+        <Route
+          path="/trivia/solo/game"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <SoloGame />
+            )
+          }
+        />
+        <Route
+          path="/trivia/solo/results"
+          element={
+            !user ? (
+              <Navigate to="/auth" replace />
+            ) : !hasCompletedOnboarding ? (
+              <Navigate to="/onboarding" replace />
+            ) : (
+              <SoloResults />
             )
           }
         />

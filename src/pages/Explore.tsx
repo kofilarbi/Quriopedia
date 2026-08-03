@@ -9,6 +9,7 @@ import KnowledgeCard from '@/components/KnowledgeCard'
 import type { CardDisplay } from '@/components/KnowledgeCard'
 import { fetchCategoryEntries } from '@/lib/entryService'
 import type { Entry } from '@/lib/entryService'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 function entryToCard(entry: Entry): CardDisplay {
   return {
@@ -70,6 +71,7 @@ function CategoryGrid() {
 function CategoryFeed({ categoryId }: { categoryId: string }) {
   const navigate = useNavigate()
   const category = categories.find((c: Category) => c.id === categoryId)
+  const CategoryIcon = category ? getCategoryIcon(category.id) : null
 
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ['categoryEntries', categoryId],
@@ -104,10 +106,10 @@ function CategoryFeed({ categoryId }: { categoryId: string }) {
         className="flex items-center gap-3 mb-6"
       >
         <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
+          className="w-14 h-14 rounded-2xl flex items-center justify-center"
           style={{ backgroundColor: `${category.color}18`, border: `2px solid ${category.color}40` }}
         >
-          {category.emoji}
+          {CategoryIcon && <CategoryIcon size={28} style={{ color: category.color }} />}
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{category.name}</h1>
@@ -139,7 +141,9 @@ function CategoryFeed({ categoryId }: { categoryId: string }) {
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-4xl mb-4">{category.emoji}</p>
+          <div className="flex justify-center mb-4">
+            {CategoryIcon && <CategoryIcon size={48} style={{ color: category.color }} />}
+          </div>
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
             No cards yet
           </h3>

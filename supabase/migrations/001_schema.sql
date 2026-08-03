@@ -2,7 +2,6 @@
 CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  emoji TEXT NOT NULL,
   color TEXT NOT NULL,
   bg_class TEXT NOT NULL,
   sort_order INTEGER NOT NULL DEFAULT 0

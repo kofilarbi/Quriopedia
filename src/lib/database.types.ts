@@ -4,8 +4,8 @@ export interface Database {
   public: {
     Tables: {
       categories: {
-        Row: { id: string; name: string; emoji: string; color: string; bg_class: string; sort_order: number }
-        Insert: { id: string; name: string; emoji: string; color: string; bg_class: string; sort_order?: number }
+        Row: { id: string; name: string; color: string; bg_class: string; sort_order: number }
+        Insert: { id: string; name: string; color: string; bg_class: string; sort_order?: number }
         Update: Partial<Database['public']['Tables']['categories']['Insert']>
       }
       entries: {
@@ -27,6 +27,28 @@ export interface Database {
         Row: { user_id: string; entry_id: string; created_at: string }
         Insert: { user_id: string; entry_id: string }
         Update: never
+      }
+      trivia_questions: {
+        Row: {
+          id: string
+          category_id: string
+          question: string
+          choices: string[]
+          correct_index: number
+          explanation: string
+          difficulty: 'easy' | 'medium' | 'hard'
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          category_id: string
+          question: string
+          choices: string[]
+          correct_index: number
+          explanation: string
+          difficulty?: 'easy' | 'medium' | 'hard'
+        }
+        Update: Partial<Omit<Database['public']['Tables']['trivia_questions']['Insert'], 'id'>>
       }
     }
   }

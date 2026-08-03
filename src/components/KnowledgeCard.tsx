@@ -5,6 +5,7 @@ import type { Category } from '@/data/mockData'
 import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import { addBookmark, removeBookmark } from '@/lib/bookmarkService'
+import { getCategoryIcon } from '@/lib/categoryIcons'
 
 export interface CardDisplay {
   id: string
@@ -38,6 +39,7 @@ export default function KnowledgeCard({ card, showBookmark = false }: Props) {
   const { bookmarks, toggleBookmark, userId } = useAppStore()
   const isBookmarked = bookmarks.includes(card.id)
   const category = categories.find((c: Category) => c.id === card.categoryId)
+  const Icon = getCategoryIcon(card.categoryId)
 
   const handleBookmark = async () => {
     // Optimistic update
@@ -73,7 +75,7 @@ export default function KnowledgeCard({ card, showBookmark = false }: Props) {
                 color: category.color,
               }}
             >
-              <span>{category.emoji}</span>
+              <Icon size={11} />
               <span>{category.name}</span>
             </span>
           )}
