@@ -45,10 +45,10 @@ export default function MultiHub() {
   })
 
   const handleCreateRoom = async () => {
-    if (!userId || !name || creating) return
+    if (!userId || creating) return
     setCreating(true)
     try {
-      const session = await createSession(userId, name)
+      const session = await createSession(userId, name || 'Player')
       navigate(`/trivia/multi/room/${session.id}`)
     } catch (err) {
       console.error('[MultiHub] createSession error:', err)
