@@ -14,8 +14,8 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['entries']['Insert']>
       }
       user_profiles: {
-        Row: { id: string; name: string; notifications_enabled: boolean; notification_time: string; dark_mode: boolean; streak_count: number; last_active_date: string | null; created_at: string; updated_at: string }
-        Insert: { id: string; name?: string; notifications_enabled?: boolean; notification_time?: string; dark_mode?: boolean; streak_count?: number; last_active_date?: string | null }
+        Row: { id: string; name: string; notifications_enabled: boolean; notification_time: string; notification_timezone: string; dark_mode: boolean; streak_count: number; last_active_date: string | null; created_at: string; updated_at: string }
+        Insert: { id: string; name?: string; notifications_enabled?: boolean; notification_time?: string; notification_timezone?: string; dark_mode?: boolean; streak_count?: number; last_active_date?: string | null }
         Update: Partial<Omit<Database['public']['Tables']['user_profiles']['Insert'], 'id'>>
       }
       user_categories: {

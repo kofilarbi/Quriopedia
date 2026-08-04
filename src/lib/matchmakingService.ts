@@ -70,3 +70,25 @@ export function subscribeToQueue(
 
   return channel
 }
+
+// Write the new session ID into a matched player's queue row so they can discover it.
+export async function writeSessionIdToQueue(targetUserId: string, sessionId: string): Promise<void> {
+  const { error } = await db
+    .from('matchmaking_queue')
+    .update({ session_id: sessionId })
+    .eq('user_id', targetUserId)
+
+  if (error) throw new Error(error.message)
+}
+
+// Non-creator players call this to check if the creator has written a session ID yet.
+export async function fetchQueueSessionId(userId: string): Promise<string | null> {
+  const { data, error } = await db
+    .from('matchmaking_queue')
+    .select('session_id')
+    .eq('user_id', userId)
+    .single()
+
+  if (error) return null
+  return (data as { session_id: string | null } | null)?.session_id ?? null
+}

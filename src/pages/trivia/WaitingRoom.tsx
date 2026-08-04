@@ -49,6 +49,14 @@ export default function WaitingRoom() {
         setLoading(false)
         return
       }
+      if (s.status === 'active') {
+        navigate(`/trivia/multi/game/${sessionId}`, { replace: true })
+        return
+      }
+      if (s.status === 'finished') {
+        navigate('/trivia/multi', { replace: true })
+        return
+      }
       setSession(s)
       setPlayers(p)
       setLoading(false)
@@ -57,7 +65,7 @@ export default function WaitingRoom() {
       setError('Failed to load room.')
       setLoading(false)
     }
-  }, [sessionId])
+  }, [sessionId, navigate])
 
   useEffect(() => {
     void loadSession()

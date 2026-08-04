@@ -25,6 +25,7 @@ export default function Profile() {
     setNotificationsEnabled,
     notificationTime,
     setNotificationTime,
+    setNotificationTimezone,
     streak,
     bookmarks,
   } = useAppStore()
@@ -103,10 +104,12 @@ export default function Profile() {
   }
 
   const handleNotificationTimeChange = async (t: string) => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
     setNotificationTime(t)
+    setNotificationTimezone(tz)
     if (userId) {
       try {
-        await updateProfile(userId, { notification_time: t })
+        await updateProfile(userId, { notification_time: t, notification_timezone: tz } as never)
       } catch (err) {
         console.error('[Profile] notificationTime error:', err)
       }

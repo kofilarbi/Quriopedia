@@ -8,13 +8,13 @@ import {
   leaveQueue,
   findQueuedPlayers,
   subscribeToQueue,
+  writeSessionIdToQueue,
+  fetchQueueSessionId,
 } from '@/lib/matchmakingService'
 import {
   createSession,
-  startGame,
   joinSession,
 } from '@/lib/sessionService'
-import { fetchTriviaQuestions } from '@/lib/triviaService'
 import { categories } from '@/data/mockData'
 import { getCategoryIcon } from '@/lib/categoryIcons'
 import type { RealtimeChannel } from '@supabase/supabase-js'
@@ -22,6 +22,8 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 const FIRST_PROMPT_MS = 25000
 const AUTO_REDIRECT_MS = 50000
 const POLL_INTERVAL_MS = 3000
+const SESSION_WAIT_INTERVAL_MS = 500
+const SESSION_WAIT_MAX_ATTEMPTS = 30
 
 type MatchmakingPhase = 'select' | 'searching'
 
@@ -60,21 +62,29 @@ export default function Matchmaking() {
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const dialogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoRedirectRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const sessionWaitRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const matchFoundRef = useRef(false)
 
-  const stopSearching = useCallback(async () => {
+  // Stops all timers and subscriptions without touching the DB queue row.
+  const stopTimers = useCallback(async () => {
     if (channelRef.current) {
       await channelRef.current.unsubscribe()
       channelRef.current = null
     }
-    if (pollRef.current) clearInterval(pollRef.current)
-    if (elapsedRef.current) clearInterval(elapsedRef.current)
-    if (dialogTimerRef.current) clearTimeout(dialogTimerRef.current)
-    if (autoRedirectRef.current) clearTimeout(autoRedirectRef.current)
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
+    if (elapsedRef.current) { clearInterval(elapsedRef.current); elapsedRef.current = null }
+    if (dialogTimerRef.current) { clearTimeout(dialogTimerRef.current); dialogTimerRef.current = null }
+    if (autoRedirectRef.current) { clearTimeout(autoRedirectRef.current); autoRedirectRef.current = null }
+    if (sessionWaitRef.current) { clearInterval(sessionWaitRef.current); sessionWaitRef.current = null }
+  }, [])
+
+  // Full cleanup: stop timers AND remove own queue row.
+  const stopSearching = useCallback(async () => {
+    await stopTimers()
     if (userId) {
       try { await leaveQueue(userId) } catch { /* ignore */ }
     }
-  }, [userId])
+  }, [stopTimers, userId])
 
   useEffect(() => {
     return () => {
@@ -87,51 +97,76 @@ export default function Matchmaking() {
       if (matchFoundRef.current) return
       matchFoundRef.current = true
       setMatchFound(true)
-      await stopSearching()
 
-      if (!userId || !name || !selectedCategory) return
+      // Stop timers but do NOT leave queue yet — the non-creator's row needs to
+      // stay alive so the creator can write the session_id into it.
+      await stopTimers()
 
-      // Lexicographically first userId creates the session
+      if (!userId || !selectedCategory) return
+
+      const displayName = name || 'Player'
       const allIds = [userId, ...otherPlayers.map((p) => p.userId)].sort()
       const isCreator = allIds[0] === userId
 
       try {
         if (isCreator) {
-          const questions = await fetchTriviaQuestions(selectedCategory, 10)
-          const questionIds = questions.map((q) => q.id)
-          const session = await createSession(userId, name)
-          // Join other players
-          for (const op of otherPlayers) {
-            try {
-              await joinSession(session.id, op.userId, op.displayName)
-            } catch { /* may fail if they joined themselves */ }
-          }
-          await startGame(session.id, questionIds)
+          const session = await createSession(userId, displayName)
+
+          // Relay session ID to every other matched player's queue row before
+          // starting the game, so they can discover and join the waiting room.
+          await Promise.all(
+            otherPlayers.map((op) =>
+              writeSessionIdToQueue(op.userId, session.id).catch(() => {})
+            )
+          )
+
+          // Start game questions but keep status 'waiting' so all players can
+          // land in WaitingRoom together before the host starts the game.
+          // (The host is already in the session as it was created with their row.)
+          await leaveQueue(userId)
           navigate(`/trivia/multi/room/${session.id}`)
         } else {
-          // Non-creator: poll until session becomes active
-          // For simplicity, navigate to matchmaking hub — the session subscription will pick it up
-          // In practice the host creates session and calls startGame. Since we can't know the session ID
-          // from this side without a coordination mechanism, redirect to multi hub.
-          navigate('/trivia/multi')
+          // Non-creator: poll own queue row until creator writes session_id.
+          let attempts = 0
+          sessionWaitRef.current = setInterval(async () => {
+            attempts++
+            if (attempts > SESSION_WAIT_MAX_ATTEMPTS) {
+              clearInterval(sessionWaitRef.current!)
+              sessionWaitRef.current = null
+              await leaveQueue(userId).catch(() => {})
+              navigate('/trivia/solo')
+              return
+            }
+            try {
+              const sessionId = await fetchQueueSessionId(userId)
+              if (sessionId) {
+                clearInterval(sessionWaitRef.current!)
+                sessionWaitRef.current = null
+                await joinSession(sessionId, userId, displayName)
+                await leaveQueue(userId)
+                navigate(`/trivia/multi/room/${sessionId}`)
+              }
+            } catch (err) {
+              console.error('[Matchmaking] session wait poll error:', err)
+            }
+          }, SESSION_WAIT_INTERVAL_MS)
         }
       } catch (err) {
         console.error('[Matchmaking] handleMatchFound error:', err)
+        await leaveQueue(userId).catch(() => {})
         navigate('/trivia/solo')
       }
     },
-    [userId, name, selectedCategory, stopSearching, navigate]
+    [userId, name, selectedCategory, stopTimers, navigate]
   )
 
   const startSearching = useCallback(async () => {
-    if (!userId || !name || !selectedCategory) return
+    if (!userId || !selectedCategory) return
     matchFoundRef.current = false
 
-    await joinQueue(userId, selectedCategory, name)
+    await joinQueue(userId, selectedCategory, name || 'Player')
 
-    // Subscribe to queue changes
     channelRef.current = subscribeToQueue(selectedCategory, () => {
-      // Trigger an immediate poll when queue changes
       if (!matchFoundRef.current) {
         findQueuedPlayers(selectedCategory, userId)
           .then((others) => {
@@ -143,7 +178,6 @@ export default function Matchmaking() {
       }
     })
 
-    // Polling
     pollRef.current = setInterval(() => {
       if (matchFoundRef.current) return
       findQueuedPlayers(selectedCategory, userId)
@@ -155,18 +189,15 @@ export default function Matchmaking() {
         .catch(console.error)
     }, POLL_INTERVAL_MS)
 
-    // Elapsed timer
     const startTime = Date.now()
     elapsedRef.current = setInterval(() => {
       setElapsedMs(Date.now() - startTime)
     }, 500)
 
-    // 25s: show dialog
     dialogTimerRef.current = setTimeout(() => {
       if (!matchFoundRef.current) setShowDialog(true)
     }, FIRST_PROMPT_MS)
 
-    // 50s: auto-redirect
     autoRedirectRef.current = setTimeout(() => {
       if (!matchFoundRef.current) {
         void stopSearching().then(() => navigate('/trivia/solo'))
@@ -260,7 +291,6 @@ export default function Matchmaking() {
     )
   }
 
-  // Searching phase
   const categoryName = selectedCategory
     ? selectedCategory === 'mixed'
       ? 'Mixed'
@@ -281,9 +311,7 @@ export default function Matchmaking() {
         </button>
 
         <div className="flex flex-col items-center justify-center flex-1 py-12">
-          {/* Pulsing avatar circles */}
           <div className="flex items-center gap-4 mb-8">
-            {/* User avatar */}
             <div className="relative">
               <div className="w-16 h-16 rounded-full bg-amber flex items-center justify-center z-10 relative">
                 <span className="text-white font-bold text-xl">
@@ -291,7 +319,6 @@ export default function Matchmaking() {
                 </span>
               </div>
             </div>
-            {/* Waiting slots */}
             {[0, 1].map((i) => (
               <motion.div
                 key={i}
@@ -304,7 +331,6 @@ export default function Matchmaking() {
             ))}
           </div>
 
-          {/* Category badge */}
           <div className="inline-flex items-center gap-2 bg-white dark:bg-navy-surface border border-sand dark:border-white/10 rounded-full px-4 py-2 mb-4">
             {selectedCategory && selectedCategory !== 'mixed' ? (
               (() => {
@@ -320,24 +346,22 @@ export default function Matchmaking() {
             </span>
           </div>
 
-          {/* Elapsed timer */}
           <motion.p
             animate={{ opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 2, repeat: Infinity }}
             className="text-sm text-warmGray dark:text-gray-400"
           >
-            Searching for {elapsedSeconds}s…
+            {matchFound ? '' : `Searching for ${elapsedSeconds}s…`}
           </motion.p>
 
           {matchFound && (
             <p className="mt-4 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
-              Match found! Setting up game…
+              Match found! Joining room…
             </p>
           )}
         </div>
       </div>
 
-      {/* No-match dialog */}
       <AnimatePresence>
         {showDialog && (
           <motion.div

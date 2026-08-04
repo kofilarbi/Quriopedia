@@ -10,6 +10,7 @@ export interface AppState {
   selectedCategories: string[]
   notificationsEnabled: boolean
   notificationTime: string
+  notificationTimezone: string
   darkMode: boolean
   streak: number
 
@@ -25,6 +26,7 @@ export interface AppState {
   toggleCategory: (id: string) => void
   setNotificationsEnabled: (v: boolean) => void
   setNotificationTime: (t: string) => void
+  setNotificationTimezone: (tz: string) => void
   toggleDarkMode: () => void
   setDarkMode: (v: boolean) => void
   setHasCompletedOnboarding: (v: boolean) => void
@@ -36,6 +38,7 @@ export interface AppState {
     selectedCategories: string[]
     notificationsEnabled: boolean
     notificationTime: string
+    notificationTimezone: string
     darkMode: boolean
     streak: number
   }) => void
@@ -50,6 +53,7 @@ export const useAppStore = create<AppState>()(
       selectedCategories: [],
       notificationsEnabled: false,
       notificationTime: '08:00',
+      notificationTimezone: 'UTC',
       darkMode: false,
       hasCompletedOnboarding: false,
       streak: 0,
@@ -71,6 +75,8 @@ export const useAppStore = create<AppState>()(
       setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
 
       setNotificationTime: (t) => set({ notificationTime: t }),
+
+      setNotificationTimezone: (tz) => set({ notificationTimezone: tz }),
 
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
 
@@ -97,6 +103,7 @@ export const useAppStore = create<AppState>()(
           selectedCategories: data.selectedCategories,
           notificationsEnabled: data.notificationsEnabled,
           notificationTime: data.notificationTime,
+          notificationTimezone: data.notificationTimezone,
           darkMode: data.darkMode,
           streak: data.streak,
         }),
@@ -109,6 +116,7 @@ export const useAppStore = create<AppState>()(
           selectedCategories: [],
           notificationsEnabled: false,
           notificationTime: '08:00',
+          notificationTimezone: 'UTC',
           darkMode: false,
           streak: 0,
           bookmarks: [],
@@ -123,6 +131,7 @@ export const useAppStore = create<AppState>()(
         selectedCategories: state.selectedCategories,
         notificationsEnabled: state.notificationsEnabled,
         notificationTime: state.notificationTime,
+        notificationTimezone: state.notificationTimezone,
         darkMode: state.darkMode,
         streak: state.streak,
         bookmarks: state.bookmarks,

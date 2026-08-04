@@ -101,7 +101,7 @@ export default function MultiResults() {
   }, [sessionId, userId])
 
   const handleRematch = async () => {
-    if (!session || !userId || !name || rematching) return
+    if (!session || !userId || rematching) return
     setRematching(true)
     try {
       const questions = await fetchTriviaQuestions(
@@ -109,7 +109,7 @@ export default function MultiResults() {
         session.roundCount
       )
       const questionIds = questions.map((q) => q.id)
-      const newSession = await createSession(userId, name)
+      const newSession = await createSession(userId, name || 'Player')
       await startGame(newSession.id, questionIds)
       navigate(`/trivia/multi/room/${newSession.id}`)
     } catch (err) {

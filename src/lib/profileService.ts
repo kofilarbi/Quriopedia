@@ -40,6 +40,7 @@ export async function loadProfile(userId: string): Promise<void> {
     selectedCategories,
     notificationsEnabled: profile.notifications_enabled,
     notificationTime: profile.notification_time,
+    notificationTimezone: (profile as ProfileRow & { notification_timezone?: string }).notification_timezone ?? 'UTC',
     darkMode: profile.dark_mode,
     streak: profile.streak_count,
   })

@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Bookmark, BookmarkCheck, Share2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bookmark, BookmarkCheck, Share2, Check, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Category } from '@/data/mockData'
 import { categories } from '@/data/mockData'
 import { useAppStore } from '@/store/useAppStore'
 import { addBookmark, removeBookmark } from '@/lib/bookmarkService'
 import { getCategoryIcon } from '@/lib/categoryIcons'
+import { shareContent } from '@/lib/share'
 
 export interface CardDisplay {
   id: string
@@ -36,10 +37,24 @@ const typeLabels: Record<CardDisplay['type'], string> = {
 
 export default function KnowledgeCard({ card, showBookmark = false }: Props) {
   const [expanded, setExpanded] = useState(false)
+  const [shared, setShared] = useState(false)
   const { bookmarks, toggleBookmark, userId } = useAppStore()
   const isBookmarked = bookmarks.includes(card.id)
   const category = categories.find((c: Category) => c.id === card.categoryId)
   const Icon = getCategoryIcon(card.categoryId)
+
+  const handleShare = async () => {
+    const url = window.location.origin
+    const result = await shareContent({
+      title: card.headline,
+      text: card.headline,
+      url,
+    })
+    if (result === 'shared' || result === 'copied') {
+      setShared(true)
+      setTimeout(() => setShared(false), 2000)
+    }
+  }
 
   const handleBookmark = async () => {
     // Optimistic update
@@ -143,10 +158,20 @@ export default function KnowledgeCard({ card, showBookmark = false }: Props) {
         <div className="flex items-center gap-3">
           <button
             className="text-warmGray hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            onClick={() => {}}
+            onClick={() => { void handleShare() }}
             aria-label="Share"
           >
-            <Share2 size={17} />
+            <AnimatePresence mode="wait" initial={false}>
+              {shared ? (
+                <motion.span key="check" initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
+                  <Check size={17} className="text-emerald-500" />
+                </motion.span>
+              ) : (
+                <motion.span key="share" initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
+                  <Share2 size={17} />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
           {showBookmark && (
             <button
