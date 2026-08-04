@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Clipboard, Check, Share2, Crown, Users, Shuffle } from 'lucide-react'
@@ -35,6 +35,7 @@ export default function WaitingRoom() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [shared, setShared] = useState(false)
   const [starting, setStarting] = useState(false)
 
   const isHost = session?.hostId === userId
@@ -85,6 +86,21 @@ export default function WaitingRoom() {
     }
   }, [sessionId, navigate])
 
+  // Polling fallback in case Supabase Realtime isn't enabled on the tables.
+  // Fires every 3 s while the room is in 'waiting' state, harmlessly coexists with Realtime.
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  useEffect(() => {
+    if (!sessionId || !session || session.status !== 'waiting') return
+    pollingRef.current = setInterval(() => {
+      fetchPlayers(sessionId)
+        .then(setPlayers)
+        .catch(() => {})
+    }, 3000)
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [sessionId, session?.status])
+
   const handleCopyCode = () => {
     if (!session) return
     void navigator.clipboard.writeText(session.roomCode).then(() => {
@@ -96,7 +112,10 @@ export default function WaitingRoom() {
   const handleShare = () => {
     if (!session) return
     const url = `${window.location.origin}/join/${session.roomCode}`
-    void navigator.clipboard.writeText(url)
+    void navigator.clipboard.writeText(url).then(() => {
+      setShared(true)
+      setTimeout(() => setShared(false), 2000)
+    })
   }
 
   const handleUpdateSettings = async (categoryId: string, roundCount: number) => {
@@ -231,8 +250,19 @@ export default function WaitingRoom() {
               onClick={handleShare}
               className="p-2 rounded-lg hover:bg-amber/10 transition-colors"
               aria-label="Share invite link"
+              title={shared ? 'Link copied!' : 'Copy invite link'}
             >
-              <Share2 size={18} className="text-warmGray" />
+              <AnimatePresence mode="wait" initial={false}>
+                {shared ? (
+                  <motion.div key="shared" initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
+                    <Check size={18} className="text-emerald-500" />
+                  </motion.div>
+                ) : (
+                  <motion.div key="share2" initial={{ scale: 0.7 }} animate={{ scale: 1 }}>
+                    <Share2 size={18} className="text-warmGray" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </button>
           </div>
         </div>

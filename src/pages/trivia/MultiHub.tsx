@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Users, Zap, Trophy, Medal, WifiOff } from 'lucide-react'
+import { ArrowLeft, Users, Zap, Trophy, Medal, WifiOff, LogIn } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore } from '@/store/useAppStore'
 import { fetchMatchHistory } from '@/lib/sessionService'
@@ -17,6 +17,7 @@ export default function MultiHub() {
   const navigate = useNavigate()
   const { userId, name } = useAppStore()
   const [creating, setCreating] = useState(false)
+  const [joinCode, setJoinCode] = useState('')
 
   if (!navigator.onLine) {
     return (
@@ -108,11 +109,54 @@ export default function MultiHub() {
             </button>
           </motion.div>
 
-          {/* Online Matchmaking */}
+          {/* Join with Code */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
+          >
+            <div className="w-full bg-white dark:bg-navy-surface border-2 border-sand dark:border-white/10 rounded-2xl p-5">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-amber/10 flex items-center justify-center flex-shrink-0">
+                  <LogIn size={24} className="text-amber" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-gray-900 dark:text-gray-50 mb-1">Join a Room</h3>
+                  <p className="text-sm text-warmGray dark:text-gray-400">
+                    Enter a 6-character room code
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && joinCode.length === 6) {
+                      navigate(`/join/${joinCode}`)
+                    }
+                  }}
+                  placeholder="ABCD12"
+                  maxLength={6}
+                  className="flex-1 font-mono text-center text-lg font-bold tracking-widest bg-cream dark:bg-navy border-2 border-sand dark:border-white/10 focus:border-amber rounded-xl px-4 py-3 text-gray-900 dark:text-gray-100 placeholder:text-warmGray/40 outline-none transition-colors uppercase"
+                />
+                <button
+                  onClick={() => { if (joinCode.length === 6) navigate(`/join/${joinCode}`) }}
+                  disabled={joinCode.length !== 6}
+                  className="px-5 py-3 rounded-xl bg-amber text-white font-bold text-sm hover:bg-amber-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Join
+                </button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Online Matchmaking */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
           >
             <button
               onClick={() => navigate('/trivia/multi/matchmaking')}

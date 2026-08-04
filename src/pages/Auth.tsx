@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase'
 
 type Tab = 'signin' | 'signup'
 
 export default function Auth() {
-  const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,7 +34,8 @@ export default function Auth() {
         const { error: signUpError } = await supabase.auth.signUp({ email, password })
         if (signUpError) throw signUpError
       }
-      navigate('/')
+      // Navigation is handled by the route layer in App.tsx (user state change triggers redirect).
+      // When Auth is embedded inline (e.g. inside JoinRoom), we intentionally don't navigate away.
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong.'
       setError(message)

@@ -99,10 +99,10 @@ export default function JoinRoom() {
     : 'Not set yet'
 
   const handleJoin = async () => {
-    if (!userId || !name || joining) return
+    if (!userId || joining) return
     setJoining(true)
     try {
-      await joinSession(session.id, userId, name)
+      await joinSession(session.id, userId, name || 'Player')
       navigate(`/trivia/multi/room/${session.id}`)
     } catch (err) {
       console.error('[JoinRoom] joinSession error:', err)

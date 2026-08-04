@@ -176,39 +176,15 @@ export default function App() {
             />
             <Route
               path="/trivia/multi/room/:sessionId"
-              element={
-                !user ? (
-                  <Navigate to="/auth" replace />
-                ) : !hasCompletedOnboarding ? (
-                  <Navigate to="/onboarding" replace />
-                ) : (
-                  <WaitingRoom />
-                )
-              }
+              element={!user ? <Navigate to="/auth" replace /> : <WaitingRoom />}
             />
             <Route
               path="/trivia/multi/game/:sessionId"
-              element={
-                !user ? (
-                  <Navigate to="/auth" replace />
-                ) : !hasCompletedOnboarding ? (
-                  <Navigate to="/onboarding" replace />
-                ) : (
-                  <MultiGame />
-                )
-              }
+              element={!user ? <Navigate to="/auth" replace /> : <MultiGame />}
             />
             <Route
               path="/trivia/multi/results/:sessionId"
-              element={
-                !user ? (
-                  <Navigate to="/auth" replace />
-                ) : !hasCompletedOnboarding ? (
-                  <Navigate to="/onboarding" replace />
-                ) : (
-                  <MultiResults />
-                )
-              }
+              element={!user ? <Navigate to="/auth" replace /> : <MultiResults />}
             />
             <Route
               path="/trivia/multi/matchmaking"
@@ -222,17 +198,8 @@ export default function App() {
                 )
               }
             />
-            {/* Join room — requires auth but NOT hasCompletedOnboarding */}
-            <Route
-              path="/join/:roomCode"
-              element={
-                !user ? (
-                  <Navigate to="/auth" replace />
-                ) : (
-                  <JoinRoom />
-                )
-              }
-            />
+            {/* Join room — public entry point; JoinRoom handles auth inline */}
+            <Route path="/join/:roomCode" element={<JoinRoom />} />
             <Route
               path="/saved"
               element={
