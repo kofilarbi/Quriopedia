@@ -85,21 +85,32 @@ export default function Profile() {
 
   const handleToggleNotifications = async () => {
     const next = !notificationsEnabled
+    console.log('[Profile] handleToggleNotifications', { next, userId, notificationsEnabled })
     setNotificationsEnabled(next)
-    if (userId) {
-      try {
-        await updateProfile(userId, { notifications_enabled: next })
-        if (next) {
-          const permission = await requestNotificationPermission()
-          if (permission === 'granted') {
-            void subscribeToPush(userId)
-          }
+    if (!userId) {
+      console.error('[Profile] STOP: userId is null/undefined — subscribe flow skipped')
+      return
+    }
+    try {
+      console.log('[Profile] calling updateProfile notifications_enabled:', next)
+      await updateProfile(userId, { notifications_enabled: next })
+      console.log('[Profile] updateProfile done')
+      if (next) {
+        console.log('[Profile] requesting notification permission…')
+        const permission = await requestNotificationPermission()
+        console.log('[Profile] permission result:', permission)
+        if (permission === 'granted') {
+          console.log('[Profile] permission granted — calling subscribeToPush')
+          void subscribeToPush(userId)
         } else {
-          void unsubscribeFromPush(userId)
+          console.error('[Profile] STOP: permission not granted:', permission)
         }
-      } catch (err) {
-        console.error('[Profile] toggleNotifications error:', err)
+      } else {
+        console.log('[Profile] disabling — calling unsubscribeFromPush')
+        void unsubscribeFromPush(userId)
       }
+    } catch (err) {
+      console.error('[Profile] toggleNotifications error:', err)
     }
   }
 
