@@ -228,6 +228,57 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 })
   }
 
+  // Pre-fetch today's entries + each user's selected categories in parallel.
+  // This avoids N per-user DB round-trips inside the loop.
+  const today = new Date().toISOString().split('T')[0]
+  const userIds = (subs ?? []).map(s => s.user_id as string)
+
+  const [{ data: todayEntries }, { data: userCatRows }] = await Promise.all([
+    supabase.from('entries').select('headline, body, category_id').eq('published_date', today),
+    userIds.length > 0
+      ? supabase.from('user_categories').select('user_id, category_id').in('user_id', userIds)
+      : Promise.resolve({ data: [] as { user_id: string; category_id: string }[] }),
+  ])
+
+  // category_id → entries[]
+  const entryByCategory = new Map<string, Array<{ headline: string; body: string }>>()
+  for (const e of todayEntries ?? []) {
+    const list = entryByCategory.get(e.category_id) ?? []
+    list.push({ headline: e.headline, body: e.body })
+    entryByCategory.set(e.category_id, list)
+  }
+
+  // user_id → category_ids[]
+  const catsByUser = new Map<string, string[]>()
+  for (const row of userCatRows ?? []) {
+    const list = catsByUser.get(row.user_id) ?? []
+    list.push(row.category_id)
+    catsByUser.set(row.user_id, list)
+  }
+
+  // Flat fallback pool (used when a user has no category rows or none match today)
+  const allEntries: Array<{ headline: string; body: string }> = []
+  for (const entries of entryByCategory.values()) allEntries.push(...entries)
+
+  function pickEntry(userId: string): { headline: string; body: string } | null {
+    const cats = catsByUser.get(userId) ?? []
+    const pool = cats.flatMap(c => entryByCategory.get(c) ?? [])
+    const source = pool.length > 0 ? pool : allEntries
+    if (source.length === 0) return null
+    return source[Math.floor(Math.random() * source.length)]
+  }
+
+  function buildNotifBody(headline: string, bodyText: string): string {
+    const LIMIT = 100
+    let preview = bodyText.trim()
+    if (preview.length > LIMIT) {
+      preview = preview.slice(0, LIMIT)
+      const lastSpace = preview.lastIndexOf(' ')
+      preview = (lastSpace > 0 ? preview.slice(0, lastSpace) : preview) + '…'
+    }
+    return `“${headline}” — ${preview} Plus more to learn today!`
+  }
+
   const staleUserIds: string[] = []
   const errorDetails: { user_id: string; status: number; body: string }[] = []
 
@@ -242,9 +293,14 @@ Deno.serve(async (req) => {
       const localTime = localTimeInZone(profile.notification_timezone ?? 'UTC')
       if (!force && localTime !== profile.notification_time) return 'skipped'
 
+      const entry = pickEntry(sub.user_id as string)
+      const notifBody = entry
+        ? buildNotifBody(entry.headline, entry.body)
+        : "Today’s learning picks are ready — come see what’s new!"
+
       const notifPayload = JSON.stringify({
         title: 'Quriopedia',
-        body: "Today's learning picks are ready — come see what's new!",
+        body: notifBody,
         icon: '/icon.svg',
         badge: '/icon.svg',
         url: '/',
