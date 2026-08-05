@@ -9,8 +9,8 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['categories']['Insert']>
       }
       entries: {
-        Row: { id: string; category_id: string; headline: string; body: string; read_more: string | null; type: 'fact' | 'vocab' | 'insight'; published_date: string; created_at: string }
-        Insert: { id?: string; category_id: string; headline: string; body: string; read_more?: string | null; type: 'fact' | 'vocab' | 'insight'; published_date: string }
+        Row: { id: string; category_id: string; headline: string; body: string; read_more: string | null; type: 'fact' | 'vocab' | 'insight'; published_date: string; created_at: string; is_generated: boolean }
+        Insert: { id?: string; category_id: string; headline: string; body: string; read_more?: string | null; type: 'fact' | 'vocab' | 'insight'; published_date: string; is_generated?: boolean }
         Update: Partial<Database['public']['Tables']['entries']['Insert']>
       }
       user_profiles: {

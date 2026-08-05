@@ -1,11 +1,8 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from './supabase'
 
-// Use an untyped client for push_subscriptions table (not in the generated DB types yet)
+// push_subscriptions isn't in generated types yet — cast at call sites
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = createClient<any>(
-  import.meta.env.VITE_SUPABASE_URL as string,
-  import.meta.env.VITE_SUPABASE_ANON_KEY as string
-)
+const db = supabase as any
 
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string
 

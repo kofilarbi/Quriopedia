@@ -72,8 +72,8 @@ Deno.serve(async () => {
       const payload = JSON.stringify({
         title: 'Quriopedia',
         body: "Today's learning picks are ready — come see what's new!",
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-96.png',
+        icon: '/icon.svg',
+        badge: '/icon.svg',
         url: '/',
       })
 

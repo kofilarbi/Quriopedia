@@ -54,24 +54,38 @@ export async function fetchTodaysEntries(categoryIds: string[]): Promise<Entry[]
     return data.map(mapRow)
   }
 
-  // Fallback: fetch the most recent entry per category
+  // Fallback: no entries published today yet (edge function hasn't run).
+  // Rotate deterministically through the pool so content changes every day
+  // instead of freezing on the last seeded date.
+  const EPOCH = new Date('2026-01-01T00:00:00Z').getTime()
+  const dayOffset = Math.floor((Date.now() - EPOCH) / (1000 * 60 * 60 * 24))
+
+  const { data: pool, error: poolError } = await supabase
+    .from('entries')
+    .select('*')
+    .in('category_id', categoryIds)
+    .lt('published_date', today)
+    .order('published_date', { ascending: true })
+
+  if (poolError) {
+    console.error('[entryService] fetchTodaysEntries pool error:', poolError)
+    throw poolError
+  }
+
+  // Group by category, converting each row immediately so we never touch raw row types
+  const byCategory = new Map<string, Entry[]>()
+  for (const row of pool ?? []) {
+    const entry = mapRow(row)
+    const list = byCategory.get(entry.categoryId) ?? []
+    list.push(entry)
+    byCategory.set(entry.categoryId, list)
+  }
+
   const fallbackResults: Entry[] = []
   for (const categoryId of categoryIds) {
-    const { data: fallback, error: fallbackError } = await supabase
-      .from('entries')
-      .select('*')
-      .eq('category_id', categoryId)
-      .order('published_date', { ascending: false })
-      .limit(1)
-
-    if (fallbackError) {
-      console.error('[entryService] fetchTodaysEntries fallback error:', fallbackError)
-      continue
-    }
-
-    if (fallback && fallback.length > 0) {
-      fallbackResults.push(mapRow(fallback[0]))
-    }
+    const catPool = byCategory.get(categoryId)
+    if (!catPool || catPool.length === 0) continue
+    fallbackResults.push(catPool[dayOffset % catPool.length])
   }
 
   return fallbackResults
